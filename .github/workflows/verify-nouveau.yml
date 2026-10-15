@@ -1,0 +1,63 @@
+
+name: Verify Nouveau module
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Find previous successful build
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ID=$(gh run list \
+            -R "$GITHUB_REPOSITORY" \
+            -w build.yaml \
+            -b macbook51-nouveau \
+            --limit 20 \
+            --json databaseId,conclusion \
+            --jq '[.[] | select(.conclusion=="success")][0].databaseId')
+          test -n "$ID" && test "$ID" != "null"
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+      - name: Download existing HAOS image
+        uses: actions/download-artifact@v8
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ steps.build.outputs.id }}
+          pattern: 'haos_generic-x86-64-*.img.xz'
+          path: haos
+
+      - name: Inspect NVIDIA kernel module
+        shell: bash
+        run: |
+          set -euo pipefail
+          IMG=$(find haos -name '*.img.xz' -type f -print -quit)
+          test -n "$IMG"
+          xz -dk "$IMG"
+
+          LOOP=$(sudo losetup -fP --show "${IMG%.xz}")
+          trap 'sudo umount /mnt/haos-check 2>/dev/null || true; sudo losetup -d "$LOOP" 2>/dev/null || true' EXIT
+
+          sudo udevadm settle
+          sudo lsblk -f "$LOOP"
+
+          PART=$(sudo lsblk -rpn -o NAME,FSTYPE "$LOOP" | awk '$2=="erofs" {print $1; exit}')
+          test -n "$PART" || { echo "EROF S partition not found"; exit 1; }
+
+          sudo mkdir -p /mnt/haos-check
+          sudo mount -t erofs -o ro "$PART" /mnt/haos-check
+
+          MODULE=$(sudo find /mnt/haos-check/lib/modules -name 'nouveau.ko*' -print -quit)
+          if [ -z "$MODULE" ]; then
+            echo "NOUVEAU MODULE NOT FOUND"
+            exit 1
+          fi
+
+          echo "NOUVEAU MODULE FOUND: $MODULE"
