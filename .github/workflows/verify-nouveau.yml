@@ -73,4 +73,14 @@ jobs:
 
           echo "=== MODULE LOAD PLAN ==="
           sudo modprobe -d /mnt/haos-check -S 6.18.52-haos -n -v nouveau
+
+          echo "=== GITHUB RUNNER CONFIG ==="
+          modprobe -c | grep -i nouveau || true
+
+          echo "=== HAOS IMAGE CONFIG ==="
+          sudo grep -RnsE 'nouveau|modeset=0' \
+            /mnt/haos-check/etc/modprobe.d \
+            /mnt/haos-check/usr/lib/modprobe.d \
+            /mnt/haos-check/lib/modprobe.d \
+            2>/dev/null || true
           
