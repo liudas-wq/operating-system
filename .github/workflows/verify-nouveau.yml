@@ -61,14 +61,16 @@ jobs:
           fi
 
           echo "NOUVEAU MODULE FOUND: $MODULE"
-echo "=== MODULE VERSION ==="
-sudo modinfo -F vermagic "$MODULE"
+          
+          echo "=== MODULE VERSION ==="
+          sudo modinfo -F vermagic "$MODULE"
 
-echo "=== DEPENDENCIES ==="
-sudo modinfo -F depends "$MODULE"
+          echo "=== DEPENDENCIES ==="
+          sudo modinfo -F depends "$MODULE"
 
-echo "=== REQUIRED FIRMWARE ==="
-sudo modinfo -F firmware "$MODULE"
+          echo "=== REQUIRED FIRMWARE ==="
+          sudo modinfo -F firmware "$MODULE"
 
-echo "=== MODULE LOAD PLAN ==="
-sudo modprobe -d /mnt/haos-check -S 6.18.52-haos -n -v nouveau
+          echo "=== MODULE LOAD PLAN ==="
+          sudo modprobe -d /mnt/haos-check -S 6.18.52-haos -n -v nouveau
+          
