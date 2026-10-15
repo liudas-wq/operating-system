@@ -61,6 +61,9 @@ jobs:
           fi
 
           echo "NOUVEAU MODULE FOUND: $MODULE"
+
+          sudo cp "$MODULE" "$GITHUB_WORKSPACE/nouveau.ko"
+          sudo chmod 644 "$GITHUB_WORKSPACE/nouveau.ko"
           
           echo "=== MODULE VERSION ==="
           sudo modinfo -F vermagic "$MODULE"
@@ -83,4 +86,11 @@ jobs:
             /mnt/haos-check/usr/lib/modprobe.d \
             /mnt/haos-check/lib/modprobe.d \
             2>/dev/null || true
+
+      - name: Upload Nouveau module
+        uses: actions/upload-artifact@v4
+        with:
+          name: macbook51-nouveau-module
+          path: nouveau.ko
+          retention-days: 30
           
